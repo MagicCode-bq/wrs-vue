@@ -41,13 +41,9 @@
                :show-close="false"
                :close="cloesDialog">
           <div>
-             <el-button type="primary"
-                       @click="openfile"
-                       size="small" round>
-              选择文件<i class="el-icon-folder el-icon--right"></i>
-            </el-button>
-             <input  hidden type="file"  id="fileInput"  ref="fileInput" @change="uploadImage" />
-             <img :src="Vides.image">
+            <file title="上传文件"
+                  :file-type="['jpg','jpeg','png']"
+                  @get-file-address="getFileAddress"/>
           </div>
          <span slot="footer"
                class="dialog-footer">
@@ -60,8 +56,7 @@
 </template>
 
 <script>
-  import  {fileUpload} from 'network/FileRequest'
-
+  import file  from 'components/common/file'
 
   export default {
     name: "OthVideo",
@@ -69,10 +64,9 @@
       return {
         currentDate: new Date().toLocaleDateString(),
         dialogVisible: false,
-        fileList: [],  //文件集合,
-        Vides:{
-            image:''
-        }
+        //上传文件返回地址
+        fileAddress:""
+
       }
     },
     methods:{
@@ -87,35 +81,13 @@
          this.dialogVisible=false
        }
       },
-      //文件上传操作
-      uploadImage(){
-        let file = this.$refs.fileInput.files[0];
-
-        //文件格式判断
-        let fileType=['jpg','jpeg','png']
-        let fileName = file.name;
-        let suffixName= fileName.split(".")[1].toLowerCase()
-        let validateSuffix=false
-        fileType.forEach((x=>{
-           if(x.toLowerCase()==suffixName){
-             validateSuffix=true;
-           }
-        }))
-        if(!validateSuffix){
-        this.$message.error({message:"文件格式不对，请选择"+fileType.join(",")})
-          return;
-        }
-
-        //上传文件
-        let formData = new window.FormData
-        formData.append("file",file)
-        fileUpload(formData).then(res=>{
-         this.Vides.image=res.obj
-        })
-      },
-      openfile(){
-        this.$refs.fileInput.dispatchEvent(new MouseEvent('click'))
+      //获取file组件返回上传的地址
+      getFileAddress(fileAddress){
+       this.fileAddress=fileAddress;
       }
+    },
+    components:{
+      file
     }
   }
 </script>
