@@ -62,6 +62,7 @@
 <script>
   import  {fileUpload} from 'network/FileRequest'
 
+
   export default {
     name: "OthVideo",
     data() {
@@ -90,7 +91,22 @@
       uploadImage(){
         let file = this.$refs.fileInput.files[0];
 
+        //文件格式判断
+        let fileType=['jpg','jpeg','png']
+        let fileName = file.name;
+        let suffixName= fileName.split(".")[1].toLowerCase()
+        let validateSuffix=false
+        fileType.forEach((x=>{
+           if(x.toLowerCase()==suffixName){
+             validateSuffix=true;
+           }
+        }))
+        if(!validateSuffix){
+        this.$message.error({message:"文件格式不对，请选择"+fileType.join(",")})
+          return;
+        }
 
+        //上传文件
         let formData = new window.FormData
         formData.append("file",file)
         fileUpload(formData).then(res=>{
