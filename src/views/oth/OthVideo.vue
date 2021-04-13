@@ -40,11 +40,20 @@
                 width="40%"
                :show-close="false"
                :close="cloesDialog">
-          <div>
+          <div class="upload-div">
             <file title="上传文件"
                   :file-type="['jpg','jpeg','png']"
-                  @get-file-address="getFileAddress"/>
+                  @get-file-address="getFileAddress">
+            </file>
+            <img :src="fileAddress">
           </div>
+         <div class="upload-div">
+           <bigfile title="分片上传视频"
+                 :file-type="['mp4']"
+                 @get-bigfile-address="getBigFileAddress">
+           </bigfile>
+           <video ref="video" :src="bigfileAddress" controls></video>
+         </div>
          <span slot="footer"
                class="dialog-footer">
                 <el-button @click="cloesDialog">取 消</el-button>
@@ -57,6 +66,7 @@
 
 <script>
   import file  from 'components/common/file'
+  import bigfile  from 'components/common/bigfile'
 
   export default {
     name: "OthVideo",
@@ -65,7 +75,8 @@
         currentDate: new Date().toLocaleDateString(),
         dialogVisible: false,
         //上传文件返回地址
-        fileAddress:""
+        fileAddress:"",
+        bigfileAddress:""
 
       }
     },
@@ -84,10 +95,19 @@
       //获取file组件返回上传的地址
       getFileAddress(fileAddress){
        this.fileAddress=fileAddress;
+      },
+      //获取bigfile组件返回上传的地址
+      getBigFileAddress(fileAddress){
+        this.bigfileAddress=fileAddress;
+        this.getTime()
+      },
+      getTime(){
+        console.log(this.$refs.video.duration)
       }
     },
     components:{
-      file
+      file,
+      bigfile
     }
   }
 </script>
@@ -112,6 +132,9 @@
   .bottom {
     margin-top: 13px;
     line-height: 12px;
+  }
+  .upload-div{
+    margin-top: 10px;
   }
 
 
