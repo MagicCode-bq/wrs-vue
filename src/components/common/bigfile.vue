@@ -13,6 +13,7 @@
 
 <script>
   import  {fileUpload} from 'network/FileRequest'
+  import {hex_md5} from '../../utils/md5'
 
   export default {
     name: "big-file",
@@ -28,6 +29,14 @@
          }
 
        }
+    },
+    data(){
+        return{
+          user:{}
+        }
+    },
+    created() {
+     this.user =JSON.parse(window.sessionStorage.getItem("user"))
     },
     methods:{
       //文件上传操作
@@ -50,20 +59,33 @@
           this.$refs.fileInput.value=''
           return;
         }
-
         //文件分片
-        let shardSize = 20*1024*1024   //文件的大小（20M）
-        let shardIndex=1 //分片的索引
+        let shardSize = 20*1024*1024    //分片文件的大小（20M）
+        let shardIndex=0                //分片的索引
         let start = shardIndex*shardSize //分片的起始位置
-         //let end =start+shardIndex（这样算结束的位置，会导致最后一片出现错误）
-        let end=Math.min(file.size,start+shardSize) //如果结束位置，大于文件的大小，取文件的大小，得到文件结束的位置
+        let end=Math.min(file.size,start+shardSize) //分片结束的位置
+        let size =file.size                          //文件的大小
+        let shardTotal=Math.ceil(size/shardSize)   //文件分片的总片数
+
+        //上传文件的唯一标识
+        let  key = hex_md5(file);
+         console.log(key)
+
         //构建开始位置，结束位置截取文件 slice()方法截取文件
-        console.log(start,end)
-         let FileSlice = file.slice(start,end);
+         let fileShard = file.slice(start,end); //当前分片
 
         //上传文件
         let formData = new window.FormData
-        formData.append("file",FileSlice)
+        formData.append("shard",fileShard)//当前片段
+        formData.append("shardSize",shardSize)//片段大小
+        formData.append("shardIndex",shardIndex)//上传的分片索引
+        formData.append("shardTotal",shardTotal)//文件分片总数
+        formData.append("user",this.user.name)//上传文件的人
+        formData.append("name",fileName)//文件的名
+        formData.append("suffix",suffixName)//文件后缀
+        formData.append("size",size)//文件大小
+        formData.append("key",key)//文件大小
+
 
         fileUpload(formData).then(res=>{
           //上传返回的地址返回父组件
