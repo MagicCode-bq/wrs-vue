@@ -39,7 +39,7 @@
      this.user =JSON.parse(window.sessionStorage.getItem("user"))
     },
     methods:{
-      //文件上传操作
+      //1、文件上传操作
       uploadFile(){
         //从input组件中获取上传的文件对象
         let file = this.$refs.fileInput.files[0];
@@ -61,40 +61,66 @@
         }
         //文件分片
         let shardSize = 20*1024*1024    //分片文件的大小（20M）
-        let shardIndex=0                //分片的索引
-        let start = shardIndex*shardSize //分片的起始位置
-        let end=Math.min(file.size,start+shardSize) //分片结束的位置
+        let shardIndex=1              //分片的索引
         let size =file.size                          //文件的大小
         let shardTotal=Math.ceil(size/shardSize)   //文件分片的总片数
 
         //上传文件的唯一标识
         let  key = hex_md5(file);
-         console.log(key)
 
-        //构建开始位置，结束位置截取文件 slice()方法截取文件
-         let fileShard = file.slice(start,end); //当前分片
+        let param= {
+          shardSize: shardSize,
+          shardIndex: shardIndex,
+          shardTotal: shardTotal,
+          user: this.user.name,
+          name: fileName,
+          suffix: suffixName,
+          size: size,
+          key: key,
+        }
 
-        //上传文件
-        let formData = new window.FormData
-        formData.append("shard",fileShard)//当前片段
-        formData.append("shardSize",shardSize)//片段大小
-        formData.append("shardIndex",shardIndex)//上传的分片索引
-        formData.append("shardTotal",shardTotal)//文件分片总数
-        formData.append("user",this.user.name)//上传文件的人
-        formData.append("name",fileName)//文件的名
-        formData.append("suffix",suffixName)//文件后缀
-        formData.append("size",size)//文件大小
-        formData.append("key",key)//文件大小
+        this.uploadRequest(param)
+      },
+      //2、获取当前上传的分片
+      getFileShard(shardIndex, shardSize) {
+        let file = this.$refs.fileInput.files[0];
+        let start = (shardIndex - 1) * shardSize //分片的起始位置
+        let end = Math.min(file.size, start + shardSize) //分片结束的位置
+        let fileShard = file.slice(start, end); //当前分片
+        return fileShard;
+      },
+      //3、上传分片
+      uploadRequest(param) {
+        //片段转换为Base64
+         let fileReader  = new FileReader();  //第一步
+         let shardSize   = param.shardSize;
+         let shardIndex  = param.shardIndex;
+         let shardTotal = param.shardTotal;
+         let fileShard = this.getFileShard(shardIndex, shardSize);
 
 
-        fileUpload(formData).then(res=>{
-          //上传返回的地址返回父组件
-         let  fileAddress=res.obj;
-          this.$refs.fileInput.value=''
-          if(fileAddress){
-            this.returnFileAddress(fileAddress);
-          }
-        })
+        fileReader.onload = (e) => {  //第二步,读取文件内容
+          let shardBase64 = e.target.result;
+           param.shard = shardBase64
+
+          //上传文件
+          fileUpload(param).then(res => {
+            //上传返回的地址返回父组件
+            let fileAddress = res.obj;
+            if(shardIndex<shardTotal){
+            param.shardIndex =param.shardIndex+1
+             this.uploadRequest(param)
+            }else{
+              if (fileAddress) {
+                this.returnFileAddress(fileAddress);
+                this.$refs.fileInput.value = ''
+              }
+            }
+          })
+        }
+
+        //第三步读取文件片段
+        fileReader.readAsDataURL(fileShard)
       },
       //触发input组件上传文件
       openfile(){
